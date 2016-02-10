@@ -1,0 +1,248 @@
+=================== HTTP =======================
+
+- the request headers are interpreted before the callback executes, while the request body is not parsed until the callback has been fired.
+- res.setHeader('field', val);
+- res.getHeader('field');
+- res.removeHeader('field');
+- how to get the request headers?
+- res.write()
+- res.end()
+- Node flushes all the headers that have been set after the first write on the response body. After that, you can't make changes.
+- res.statusCode can be set before writes.
+- learn curl for fucks sake
+
+var http = require('http');
+var server = http.createServer(function(req, res){
+	req.setEncoding('utf8'); //default is binary
+	req.on('data', function(chunk){
+		console.log('parsed', chunk);
+	})
+	req.on('end', function(){
+		console.log('done parsing!!!');
+		res.end();
+	});
+});
+
+- setting content-length could speed up responses, the body can be  constructer ahead of time in memory, so Node disables its chunked encoding. 
+- Buffer.byteLength('asdfasdf');
+- Core modules: url, fs, util, path, http, querystring
+
+- make a file server:
+
+var http = require('http');
+var parse = require('url');
+var path = require('path');
+var fs = require('fs');
+
+var root = __dirname;
+
+var server = http.createServer(function(req, res){
+	var url = parse(req.url);
+	var absPath = path.join(root, url.pathname);
+	var stream = fs.createReadStream(absPath);
+	stream.on('data', function(chunk){
+		res.write(chunk);
+	});
+	stream.on('end', function(){
+		res.end();
+	});
+})
+
+server.listen(3000);
+
+// unsafe because the user can go to upper directories.
+
+Any ReadableStream can be piped into any WritableStream. http.req is a ReadableStream
+
+var serveer = http.createServer(function(req, res){
+	var url = parse(req.url);
+	var absPath = path.join(root, url.pathname);
+	var stream = fs.createReadStream(absPath);
+	stream.pipe(res);
+})
+
+============== Handling Erros ==============
+
+Everything that inherits from EventEmitter can emmit an error event.
+
+stream.on('error', function(err){
+	res.statusCode = 500;
+	res.end('Internal Server Error');
+})
+
+========== Forms ======
+
+application/x-www-form-urlencoded
+multipart/form-data -> when there's a file in the form
+
+--- Make a todo list application
+
+var http = requrie('http');
+var items = [];
+
+var serever = http.createServer(function(req,res){
+	if('/' == req.url){
+		switch (req.method) {
+			case 'GET':
+				show(res);
+				break;
+			case 'POST':
+				add(req, res);
+				break;
+		}	
+	}
+	else {
+		notFound(res);
+	}
+})
+
+server.listen(3000);
+
+var qs = require('querystring');
+
+function add(req, res){
+	var body = '';
+	req.setEncoding('utf8');
+	req.on('data', function(chunk){
+		body += chunk
+	});
+	req.on('end', function(){
+		var obj = qs.parse(body);
+		items.push(obj.item);
+		show(res);
+	})
+}
+
+this example assumes that the content-type is application/x-www-form-urlencoded
+
+-formidable for multipart data
+i
+
+========================== HTTPS ==============
+
+- openssl genrsa 1024 > key.pem
+- openssl req -x509 -new -key key.pem > key-cert.pem
+
+var https = require('https');
+var fs = require('fs');
+
+var options = {
+	key: fs.readFileSnc('./key.pem'),
+	cert: fs.readFileSync('./key-cert.pem')
+}
+
+https.createServer(options, function(req, res){
+	res.writeHead(200);
+	res.end("hello world");
+}).listen("3000");
+
+================= Mongoose ================
+
+mongodb
+
+var mongodb = require('mongodb');
+
+var server = new mongodb.Server('localhost', 27017, {});
+
+var client = new mondodb.Db('mydb', server, {w: 1}); //you can have many mongo instances running
+
+////////////
+
+client.open(function(err){
+	client.collection('test_insert', function(err, coll){
+		coll.insert({obj}, {safe: true}, function callback (err, res){
+			console.log(res[0]._id)
+		});	
+	})
+})
+
+- the object ID is not actually a string, but a BSON (binary json), which is lighter and faster to parse and navigate
+
+======= Mongoose ========
+
+- Mongoose abstracts a lot of the logistics of operating collections. Such as validating, updating or making schemas.
+
+var mongoose = require('mongoose');
+var db = mongoose.connect('mongodb://localhost/example');
+
+var Schema = mongoose.Schema;
+
+var Example = new Schema({
+	project: String,
+	description: String
+});
+
+mongoose.model('example', Example);
+
+
+==============
+
+var Example = mongoose.model('Example');
+var example = new Example();
+example.property = 'something';
+example.save(callback);
+
+function callback(){
+	Example.find({property: {$exists: true}}, function(err, res){
+		console.log(JSON.Stringify(res[0]));	
+	})
+}
+
+example.remove();
+
+================= Redis =================
+- channels
+
+var net = require('net');
+var redis = require('redis');
+
+var server = net.createServer(function(socket) {
+	var subscriber;
+	var publisher;
+
+	socket.on('connect', function(){
+		subscriber = redis.createClient();
+		subscriber.subscribe('main_chat_room');
+
+		subscriber.on('message', function(channel, message){
+			socket.write('Channel '+ channel +':'+ message);
+		})
+
+		publisher = redis.createClient();
+	});
+	
+	socket.on('data', function(){
+		publisher.publish('main_chat_room');
+	})
+
+	socket.on('end', function(){
+		subscriber.unsubscribe('main_chat_room');
+		subscriber.end();
+		publisher.end();
+	})
+})
+
+- redis is faster if you have hiredis installed, because it uses the C implementation instead of the javascript's
+
+
+=============== Config ==============
+
+================ Express =============
+
+- Express provides a lot of abstractions and middleware operations that ease common tasks
+- A middleware is what happens after getting a request but before going to the business logic
+
+================ Routing ===============
+
+=============== Middlewares ============
+
+=============== Sessions ===============
+
+=============== OAuth ================
+
+================ Streaming ================
+
+================= P2P ==================
+
+
+
