@@ -1,0 +1,25 @@
+<!DOCKTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>My Express Blog - Write</title>
+</head>
+<body>
+	<nav>
+		<ul>
+			<li class=""><a href="/">Blog</a></li>
+			<li class=""><a href="/write">Write</a></li>
+			<li class=""><a href="/login">login</a></li>
+		</ul>
+	</nav>
+	<form action="/posts" method="post">
+		<span class="input-title">
+			<label for="title">Title</label>
+			<input type="text" name="title" value="" id="title">
+		</span>
+		<textarea name="content" id=""></textarea>
+		<button type="submit">Publish</button>
+	</form>
+</body>
+</html>

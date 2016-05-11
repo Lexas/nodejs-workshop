@@ -1,0 +1,9 @@
+
+extends ./layout.jade
+
+block content
+	each post in posts
+		article
+			header: h1 #{post.title} 
+			p #{post.content}
+
